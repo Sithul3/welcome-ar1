@@ -1,71 +1,93 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+<head>
     <title>Engineering Welcome AR</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.3.0/model-viewer.min.js"></script>
     <style>
-      body { margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; background-color: #1a1a1a; }
-      model-viewer { width: 100%; height: 100%; }
+        body { 
+            margin: 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            background-color: #1a1a1a; 
+            overflow: hidden;
+        }
+        model-viewer { 
+            width: 100%; 
+            height: 100%; 
+        }
+        /* This ensures your button stays visible and clickable */
+        #custom-ar-button {
+            background-color: #ffffff;
+            color: #007bff;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 50px;
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 999; /* Forces it to the front */
+            cursor: pointer;
+            box-shadow: 0px 10px 20px rgba(0,0,0,0.5);
+        }
     </style>
-  </head>
-  <body>
+</head>
+<body>
 
     <model-viewer 
-      id="gyroModel"
-      src="model.glb" 
-      ar 
-      ar-modes="webxr scene-viewer quick-look" 
-      ar-placement="floor"
-      ar-scale="auto"
-      camera-controls 
-      autoplay
-      shadow-intensity="1.5" 
-      alt="Welcome Engineering Students!">
-      
-      <button slot="ar-button" id="ar-button" style="background-color: white; border-radius: 50px; border: none; position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); padding: 12px 24px; font-weight: bold; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
-        👋 Activate AR
-      </button>
-      
+        id="gyroModel"
+        src="model.glb" 
+        ar 
+        ar-modes="webxr scene-viewer quick-look" 
+        ar-placement="floor"
+        ar-scale="auto"
+        camera-controls 
+        autoplay
+        shadow-intensity="1.5"
+        alt="Engineering Welcome AR">
+        
+        <button slot="ar-button" id="custom-ar-button">
+            🚀 ACTIVATE WELCOME AR
+        </button>
+
     </model-viewer>
 
     <script>
-      const modelViewer = document.querySelector('#gyroModel');
-      const arButton = document.querySelector('#ar-button');
+        const modelViewer = document.querySelector('#gyroModel');
+        const arButton = document.querySelector('#custom-ar-button');
 
-      // Request permission and start gyro tracking
-      function initGyro() {
-        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-          // Required for iOS 13+
-          DeviceOrientationEvent.requestPermission()
-            .then(permissionState => {
-              if (permissionState === 'granted') {
+        function initGyro() {
+            if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+                DeviceOrientationEvent.requestPermission()
+                    .then(permissionState => {
+                        if (permissionState === 'granted') {
+                            window.addEventListener('deviceorientation', handleOrientation);
+                        }
+                    })
+                    .catch(console.error);
+            } else {
                 window.addEventListener('deviceorientation', handleOrientation);
-              }
-            })
-            .catch(console.error);
-        } else {
-          // For Android and older iOS
-          window.addEventListener('deviceorientation', handleOrientation);
+            }
         }
-      }
 
-      function handleOrientation(event) {
-        // We only want the gyro to affect the model in the 3D web view
-        // In native AR (Scene Viewer/Quick Look), the "floor" logic takes over
-        if (!modelViewer.canActivateAR) return;
+        function handleOrientation(event) {
+            // Only apply gyro rotation in the 3D web view to keep it realistic
+            if (!modelViewer.canActivateAR) {
+                const alpha = event.alpha; 
+                const beta = event.beta;   
+                const gamma = event.gamma; 
+                modelViewer.orientation = `${beta - 90}deg ${alpha}deg ${gamma}deg`;
+            }
+        }
 
-        const alpha = event.alpha; // Compass direction
-        const beta = event.beta;   // Tilt front/back
-        const gamma = event.gamma; // Tilt left/right
-
-        // This tilts the model slightly based on how you hold the phone
-        modelViewer.orientation = `${beta - 90}deg ${alpha}deg ${gamma}deg`;
-      }
-
-      arButton.addEventListener('click', initGyro);
+        // Listen for the button click to start gyro permissions
+        arButton.addEventListener('click', initGyro);
     </script>
-
-  </body>
+</body>
 </html>
